@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test EEPROM - by Szlendak</title>
+</head>
+<body>
+    <h1>EEPROM Read/Write</h1>
+    <form action="/save" method="POST">
+        Value 1: <input type="number" name="value1" maxlength="8"><br>
+        Value 2: <input type="number" name="value2" maxlength="8"><br>
+        <input type="submit" value="Save">
+    </form>
+    <h2>Current Values</h2>
+    <p>Value 1: {{value1}}</p>
+    <p>Value 2: {{value2}}</p>
+</body>
+</html>
