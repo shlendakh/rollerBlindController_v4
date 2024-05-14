@@ -1,36 +1,32 @@
 #include <Arduino.h>
+#include <CheapStepper.h>
 #include <EEPROM.h>
 #include <ESP8266WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 
-// Odczytanie zmiennych środowiskowych
-#ifndef WIFI_SSID
-#define WIFI_SSID "default_ssid"
-#endif
-
-#ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "default_password"
-#endif
-
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASSWORD;
+const char *ssid = WIFI_SSID;
+const char *password = WIFI_PASSWORD;
 
 AsyncWebServer server(80);
 
-const int EEPROM_SIZE = 8; // 2 unsigned long integers (4 bytes each)
+const int EEPROM_SIZE = 8;  // 2 unsigned long integers (4 bytes each)
 uint32_t value1 = 0;
 uint32_t value2 = 0;
+int motorPosition = 0;  // Pozycja silnika
+int motorStep = 256;  // Ilość stopni obrotu silnika
 
-String readFile(fs::FS &fs, const char * path) {
+CheapStepper stepper(D5, D6, D7, D8);  // Konfiguracja pinów do sterowania silnikiem
+
+String readFile(fs::FS &fs, const char *path) {
   File file = fs.open(path, "r");
-  if(!file || file.isDirectory()) {
+  if (!file || file.isDirectory()) {
     Serial.println("- failed to open file for reading");
     return String();
   }
-  
+
   String fileContent;
-  while(file.available()) {
+  while (file.available()) {
     fileContent += String((char)file.read());
   }
   file.close();
@@ -38,6 +34,8 @@ String readFile(fs::FS &fs, const char * path) {
 }
 
 void setup() {
+  stepper.setRpm(16);  // Ustawienie prędkości obrotowej silnika
+
   Serial.begin(115200);
 
   // Initialize LittleFS
@@ -57,12 +55,12 @@ void setup() {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.println("Connecting to WiFi...");
+    Serial.println("Connecting to WiFi: " + String(ssid) + "...");
   }
   Serial.println("Connected to WiFi");
 
   // Serve HTML file
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     String html = readFile(LittleFS, "/index.html");
     html.replace("{{value1}}", String(value1));
     html.replace("{{value2}}", String(value2));
@@ -70,7 +68,7 @@ void setup() {
   });
 
   // Handle form submission
-  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (request->hasParam("value1", true) && request->hasParam("value2", true)) {
       value1 = request->getParam("value1", true)->value().toInt();
       value2 = request->getParam("value2", true)->value().toInt();
@@ -90,6 +88,21 @@ void setup() {
     } else {
       request->send(400, "text/plain", "Invalid Input");
     }
+  });
+
+  // Handle motor control
+  server.on("/stepCW", HTTP_GET, [](AsyncWebServerRequest *request) {
+    stepper.moveCW(motorStep);  // Obrót o 1 stopień zgodnie z ruchem wskazówek zegara
+    motorPosition += motorStep;
+    String response = "{\"position\":" + String(motorPosition) + "}";
+    request->send(200, "application/json", response);
+  });
+
+  server.on("/stepCCW", HTTP_GET, [](AsyncWebServerRequest *request) {
+    stepper.moveCCW(motorStep);  // Obrót o 1 stopień przeciwnie do ruchu wskazówek zegara
+    motorPosition -= motorStep;
+    String response = "{\"position\":" + String(motorPosition) + "}";
+    request->send(200, "application/json", response);
   });
 
   // Start server

@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test EEPROM - by Szlendak</title>
+    <title>EEPROM Read/Write</title>
+    <script>
+        function sendCommand(command) {
+            fetch(`/${command}`).then(response => response.json()).then(data => {
+                document.getElementById('position').innerText = data.position;
+            });
+        }
+    </script>
 </head>
 <body>
     <h1>EEPROM Read/Write</h1>
@@ -13,5 +20,12 @@
     <h2>Current Values</h2>
     <p>Value 1: {{value1}}</p>
     <p>Value 2: {{value2}}</p>
+
+    <h2>Control</h2>
+    <button onclick="sendCommand('stepCW')">+</button>
+    <button onclick="sendCommand('stepCCW')">-</button>
+
+    <h2>Motor Position</h2>
+    <p id="position">0</p>
 </body>
 </html>
