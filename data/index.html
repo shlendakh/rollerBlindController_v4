@@ -6,26 +6,73 @@
         function sendCommand(command) {
             fetch(`/${command}`).then(response => response.json()).then(data => {
                 document.getElementById('position').innerText = data.position;
+                document.getElementById('eeprom-input3').value = data.position;
             });
+        }
+
+        function eepromUpdate(eeprom) {
+            const value = document.querySelector(`input[name=${eeprom}]`).value;
+
+            console.log(`Updating ${eeprom} to ${value}`);
+
+            const data = new URLSearchParams();
+            data.append(eeprom, value);
+
+            fetch('/eeprom', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: data
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            }).then(data => {
+                document.getElementById(eeprom).innerText = value;
+            }).catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+            
         }
     </script>
 </head>
 <body>
-    <h1>EEPROM Read/Write</h1>
-    <form action="/save" method="POST">
-        Value 1: <input type="number" name="value1" maxlength="8"><br>
-        Value 2: <input type="number" name="value2" maxlength="8"><br>
-        <input type="submit" value="Save">
-    </form>
-    <h2>Current Values</h2>
-    <p>Value 1: {{value1}}</p>
-    <p>Value 2: {{value2}}</p>
+    <h1>Roller Blinder</h1>
 
-    <h2>Control</h2>
+    <h2>Chip info</h2>
+    <p>Chip ID: {{chipId}}</p>
+
+    <h2>EEPROM Current Values</h2>
+    <p id="eeprom-val1">Value 1: <span id="eeprom1">{{eeprom1}}</span></p>
+    <p id="eeprom-val2">Value 2: <span id="eeprom2">{{eeprom2}}</span></p>
+    <p id="eeprom-val3">Value 3: <span id="eeprom3">{{eeprom3}}</span></p>
+
+    <h2> Stepper Control</h2>
     <button onclick="sendCommand('stepCW')">+</button>
     <button onclick="sendCommand('stepCCW')">-</button>
 
+    <h2>EEPROM Control</h2>
+    <div>
+        <label for="eeprom1">Value 1:</label>
+        <input type="number" id="eeprom-input1" name="eeprom1" value="{{eeprom1}}">
+        <button onclick="eepromUpdate('eeprom1')">Set</button>
+    </div>
+
+    <div>
+        <label for="eeprom2">Value 2:</label>
+        <input type="number" id="eeprom-input2" name="eeprom2" value="{{eeprom2}}">
+        <button onclick="eepromUpdate('eeprom2')">Set</button>
+    </div>
+
+    <div>
+        <label for="eeprom3">Value 3:</label>
+        <input type="number" id="eeprom-input3" name="eeprom3" value="{{eeprom3}}">
+        <button onclick="eepromUpdate('eeprom3')">Set</button>
+    </div>
+
     <h2>Motor Position</h2>
-    <p id="position">0</p>
+    <p id="position">{{eeprom3}}</p>
 </body>
 </html>
