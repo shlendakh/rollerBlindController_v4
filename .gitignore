@@ -5,3 +5,4 @@
 .vscode/ipch
 .env
 rollerBlindController_v4.code-workspace
+.DS_Store

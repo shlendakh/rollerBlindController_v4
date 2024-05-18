@@ -1,15 +1,16 @@
 #include "server.h"
-
 #include <CheapStepper.h>
 #include <EEPROM.h>
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 #include <Ticker.h>
+#include <PubSubClient.h>
 
 // Global variable declarations
 extern long eeprom1;
 extern long eeprom2;
 extern long eeprom3;
+
 extern int motorPosition;
 extern const int motorStep;
 extern const int motorSpeed;
@@ -18,6 +19,7 @@ extern const String chipId;
 
 extern CheapStepper stepper;
 extern Ticker motorTicker;
+extern PubSubClient client;
 
 // Flag to control motor operation
 volatile bool motorRunning = false;
@@ -86,6 +88,7 @@ void setupServer() {
       motorTicker.attach_ms(msDelay, motorStepControl);
       String response = "{\"position\":" + String(motorPosition) + "}";
       request->send(200, "application/json", response);
+      client.publish("roller_blinder/position", String(motorPosition).c_str());
     } else {
       request->send(400, "application/json", "{\"error\":\"Missing position parameter\"}");
     }
@@ -99,7 +102,7 @@ void setupServer() {
     EEPROM.commit();
     eeprom3 = motorPosition;
     Serial.println("Motor stopped and position saved: " + String(motorPosition));
-
+    client.publish("roller_blinder/position", String(motorPosition).c_str());
     request->send(200, "application/json", "{\"status\":\"Motor stopped\"}");
   });
 
@@ -140,6 +143,9 @@ void setupServer() {
     if (updated) {
       EEPROM.commit();
       Serial.println("EEPROM committed");
+      client.publish("roller_blinder/eeprom1", String(eeprom1).c_str());
+      client.publish("roller_blinder/eeprom2", String(eeprom2).c_str());
+      client.publish("roller_blinder/eeprom3", String(eeprom3).c_str());
     }
     request->send(200, "application/json", "{\"status\":\"ok\"}");
   });
