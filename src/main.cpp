@@ -2,7 +2,9 @@
 #include <CheapStepper.h>
 #include <EEPROM.h>
 #include <ESP8266WiFi.h>
+#include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
+#include <Ticker.h>
 #include "server.h"
 
 // Change in the .env file
@@ -10,19 +12,22 @@ const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 
 // Motor configuration
-int motorStep = 256;    // Number of steps per revolution
-int motorSpeed = 12;    // Motor speed in RPM
+const int motorStep = 256;    // Number of steps per revolution
+const int motorSpeed = 12;    // Motor speed in RPM
 
 // EEPROM configuration
 const int EEPROM_SIZE = 12;  // 3 unsigned long integers (4 bytes each)
-uint32_t eeprom1 = 0;
-uint32_t eeprom2 = 0;
-uint32_t eeprom3 = 0;
+long eeprom1 = 0;
+long eeprom2 = 0;
+long eeprom3 = 0;
 
 // Global variables
 int motorPosition = 0;  // Current motor position
 const String chipId = String(ESP.getChipId(), HEX);
 CheapStepper stepper(D1, D2, D5, D6);  // Stepper motor configuration
+
+Ticker motorTicker; // Ticker instance
+AsyncWebServer server(80); // Server instance
 
 void setup() {
   stepper.setRpm(motorSpeed);    // Set motor speed

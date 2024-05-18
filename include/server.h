@@ -5,15 +5,17 @@
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
 #include <CheapStepper.h>
+#include <Ticker.h>
 
 extern AsyncWebServer server;
+extern Ticker motorTicker;
 
-extern uint32_t eeprom1;
-extern uint32_t eeprom2;
-extern uint32_t eeprom3;
+extern long eeprom1;
+extern long eeprom2;
+extern long eeprom3;
 extern int motorPosition;
-extern int motorStep;
-extern int motorSpeed;
+extern const int motorStep;
+extern const int motorSpeed;
 extern const String chipId;
 extern CheapStepper stepper;
 
